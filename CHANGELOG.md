@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- CI/CD: Enable S3 module publishing for BYOC distribution
+
 ## [6.6.0](https://github.com/terraform-aws-modules/terraform-aws-vpc/compare/v6.5.1...v6.6.0) (2026-01-08)
 
 ### Features
