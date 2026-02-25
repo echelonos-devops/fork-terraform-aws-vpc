@@ -1,0 +1,70 @@
+name: Publish Module
+
+# SLSA v1.2 compliant: build → attest → verify → release
+# - Attestations on all push events (not PRs)
+# - Release creation only on main
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # Build module archive on all push events (SLSA v1.2: attestations require push events)
+  build-tf:
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+    uses: echelonos-devops/github-workflows/.github/workflows/rw-build-tf.yaml@49420f2a3367fb22c58ba67b8b6daa42fcae34b6 # v0.10.0
+    with:
+      target-source-url: "s3::https://s3-us-east-2.amazonaws.com/production-artifacts-terraform-modules-bd2c/terraform-modules"
+
+  # Attest blob on all push events (SLSA v1.2 compliance)
+  attest-blob:
+    needs: build-tf
+    if: github.event_name != 'pull_request'
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+      actions: read
+    uses: echelonos-devops/github-workflows/.github/workflows/rw-attest-blob.yaml@49420f2a3367fb22c58ba67b8b6daa42fcae34b6 # v0.10.0
+    with:
+      artifact-id: ${{ needs.build-tf.outputs.module-artifact-id }}
+      subject-name: ${{ needs.build-tf.outputs.module-name }}-${{ github.sha }}
+      attest-sbom: false
+
+  # Verify attestation (SLSA L3: independent verification after attestation)
+  verify-blob:
+    needs: [build-tf, attest-blob]
+    if: github.event_name != 'pull_request'
+    permissions:
+      packages: read
+      attestations: read
+      contents: read
+      actions: read
+    uses: echelonos-devops/github-workflows/.github/workflows/rw-verify.yaml@49420f2a3367fb22c58ba67b8b6daa42fcae34b6 # v0.10.0
+    with:
+      subject-type: blob
+      artifact-id: ${{ needs.build-tf.outputs.module-artifact-id }}
+      cert-identity: https://github.com/echelonos-devops/github-workflows/.github/workflows/rw-attest-blob.yaml@49420f2a3367fb22c58ba67b8b6daa42fcae34b6 # v0.10.0
+
+  # Semantic release only on main (creates version tag + GitHub release + S3 publish)
+  semantic-release:
+    needs: [build-tf, attest-blob, verify-blob]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      actions: read
+    uses: echelonos-devops/github-workflows/.github/workflows/rw-semantic-release.yaml@49420f2a3367fb22c58ba67b8b6daa42fcae34b6 # v0.10.0
+    with:
+      artifact-id: ${{ needs.build-tf.outputs.module-artifact-id }}
+      publish-to-s3: true
+      s3-bucket-name: production-artifacts-terraform-modules-bd2c
+    secrets:
+      release-token: ${{ secrets.RELEASE_PAT }}
+      aws-s3-access-key-id: ${{ secrets.AWS_S3_PUBLISH_ACCESS_KEY_ID }}
+      aws-s3-secret-access-key: ${{ secrets.AWS_S3_PUBLISH_SECRET_ACCESS_KEY }}
