@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [6.6.1] - 2026-02-25
+
 ### Fixed
 
 - CI/CD: Enable S3 module publishing for BYOC distribution
