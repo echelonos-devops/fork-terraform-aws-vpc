@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.6.1](https://github.com/echelonos-devops/fork-terraform-aws-vpc/compare/v6.6.0...v6.6.1) (2026-02-25)
+
+### Bug Fixes
+
+* Enable S3 module publishing for BYOC distribution ([#2](https://github.com/echelonos-devops/fork-terraform-aws-vpc/issues/2)) ([3a32f37](https://github.com/echelonos-devops/fork-terraform-aws-vpc/commit/3a32f37d787be71700ef6c20b199a645cdaf5c19))
+
 ## [Unreleased]
 
 ### Fixed
