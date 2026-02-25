@@ -6,7 +6,6 @@ name: Publish Module
 
 on:
   push:
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
